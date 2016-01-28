@@ -1,0 +1,172 @@
+#include "application.h"
+#include "MFRC522.h"
+#include "nixies_drv.h"
+#include "pwm.h"
+
+
+int led2 = D7;
+
+// RFID pinout
+#define SS_PIN DAC
+#define RST_PIN WKP
+
+uint32_t last_tag = 0 ;
+uint32_t current_tag = 0 ;
+uint32_t current_tag_iot = 0;
+int retry = 3;
+
+MFRC522 mfrc522;  // Create MFRC522 instance.
+
+
+NixiesDriver nixies;
+
+bool test = false;
+
+void setup() {
+
+  nixies.Setup();
+
+
+  Particle.variable("get_cur_tag", current_tag_iot);
+  // We are going to tell our device that D0 and D7 (which we named led1 and led2 respectively) are going to be output
+  // (That means that we will be sending voltage to them, rather than monitoring voltage that comes from them)
+
+  // It's important you do this here, inside the setup() function rather than outside it or in the loop function.
+
+  SPI.begin();
+	SPI.setClockSpeed(100000);
+
+  mfrc522.PCD_Init();   // Init MFRC522 module
+  //mfrc522.PCD_SetAntennaGain(mfrc522.RxGain_max);
+  byte v = mfrc522.PCD_ReadRegister(mfrc522.VersionReg);
+  Serial.print(F("Firmware Version: 0x"));
+  Serial.print(v, HEX);
+
+
+  pinMode(led2, OUTPUT);
+
+
+
+  //pinMode(D1, OUTPUT);
+  //pinMode(D0, OUTPUT);
+  //pinMode(D1, OUTPUT);
+
+  //SPI.begin();
+  //SPI.setClockSpeed(100000);
+  //SPI.setDataMode(SPI_MODE0) ;
+
+
+
+
+
+}
+
+static void endSpiTransfer()
+{
+  digitalWrite(D1, HIGH);
+}
+
+// Next we have the loop function, the other essential part of a microcontroller program.
+// This routine gets repeated over and over, as quickly as possible and as many times as possible, after the setup function is called.
+// Note: Code that blocks for too long (like more than 5 seconds), can make weird things happen (like dropping the network connection).  The built-in delay function shown below safely interleaves required background activity, so arbitrarily long delays can safely be done if you need them.
+static uint8_t counter = 0 ;
+static int inc = 50;
+//static const uint32_t leds[] = {0x00000001, 0x00000002, 0x00000004, 0x40000000, 0x80000000 };
+static const uint32_t leds[] = {0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001 };
+
+void loop()
+{
+
+  //nixies.LoadShiftRegister(0xAAAAAAAA);
+  nixies.CyclTask();
+
+  counter++;
+  if(counter == 5)
+  {
+      counter = 0;
+  }
+
+
+
+  // To blink the LED, first we'll turn it on...
+  //delay(50);
+  //digitalWrite(led2, HIGH);
+
+  //SPI.transfer(13);
+  //digitalWrite(D1, LOW);
+  //SPI.transfer(buffer_tx, buffer_rx, 5, endSpiTransfer);
+  //tone(D0,20000);
+  // We'll leave it on for 1 second...
+  //delay(50);
+  //noTone(A0);
+  //Serial.println("hello world!");
+  //Serial.println(mfrc522.PCD_GetAntennaGain());
+
+  //byte v = mfrc522.PCD_ReadRegister(mfrc522.VersionReg);
+  //Serial.print(F("Firmware Version: 0x"));
+  //Serial.print(v, HEX);
+
+  // Nixies management !
+
+ if( inc > 0)
+ {
+   if(nixies.GetBrightness() + inc > nixies.GetMaxBrightness())
+   {
+       inc = -50;
+   }
+ }
+ else
+ {
+   if(nixies.GetBrightness() + inc <= 50)
+   {
+      inc = 50;
+   }
+ }
+ nixies.SetBrightness(nixies.GetBrightness() + inc);
+
+
+
+  // RFID management !
+  delay(10);
+  if ( mfrc522.PICC_IsNewCardPresent())
+  {
+      if ( mfrc522.PICC_ReadCardSerial())
+      {
+
+          if(mfrc522.uid.size == sizeof(uint32_t)) // Compatible only
+          {
+              current_tag = *((uint32_t*)mfrc522.uid.uidByte);
+              retry = 3;
+          }
+          //Serial.print(counter);
+          //Serial.print("Tag");
+          //Serial.println(current_tag);
+      }
+  }
+  else
+  {
+      retry--;
+      if(retry == 0)
+      {
+          current_tag = 0 ;
+          retry = 1;
+      }
+  }
+
+  if(current_tag != last_tag)
+  {
+      if(current_tag == 0)
+      {
+          //Serial.println("Tag Lost!");
+          current_tag_iot = 0 ;
+      }
+      else
+      {
+          //Serial.print("New Tag: ");
+          //Serial.println(current_tag);
+          current_tag_iot = current_tag;
+      }
+  }
+  last_tag = current_tag;
+  // And repeat!
+}
