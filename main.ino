@@ -16,6 +16,10 @@ volatile long timeIRQ = 0;
 uint32_t last_tag = 0 ;
 uint32_t current_tag = 0 ;
 uint32_t current_tag_iot = 0;
+
+uint32_t current_pos_iot = 100;
+
+
 int retry = 3;
 
 MFRC522 mfrc522;  // Create MFRC522 instance.
@@ -38,10 +42,12 @@ void button1(void)
   if(digitalRead(A2))
   {
     pos++;
+    digitalWrite(led2, HIGH);
   }
   else
   {
     pos--;
+    digitalWrite(led2, LOW);
   }
 }
 
@@ -55,7 +61,8 @@ void setup() {
   //nixies.Setup();
 
 
-  Particle.variable("get_cur_tag", current_tag_iot);
+  //Particle.variable("get_cur_tag", current_tag_iot);
+  Particle.variable("get_cur_tag", current_pos_iot);
   // We are going to tell our device that D0 and D7 (which we named led1 and led2 respectively) are going to be output
   // (That means that we will be sending voltage to them, rather than monitoring voltage that comes from them)
 
@@ -85,9 +92,9 @@ void setup() {
   //SPI.setDataMode(SPI_MODE0) ;
 
   //pinMode(led2, OUTPUT);
-  //pinMode(A1, INPUT);
-  //pinMode(A2, INPUT);
-  //attachInterrupt(A1, button1, FALLING);
+  pinMode(A1, INPUT);
+  pinMode(A2, INPUT);
+  attachInterrupt(A1, button1, FALLING);
 
   //pinMode(A0, INPUT_PULLUP);
   //attachInterrupt(A0, button2, FALLING);
@@ -106,6 +113,7 @@ static const uint32_t leds[] = {0x00000001, 0x00000001, 0x00000001, 0x00000001, 
 void loop()
 {
 
+current_pos_iot = pos;
   //Serial.print(pos);
   //Serial.print("/");
   //Serial.println(pos2);
@@ -167,7 +175,7 @@ void loop()
   delay(10);
   if ( mfrc522.PICC_IsNewCardPresent())
   {
-      digitalWrite(led2, HIGH);
+      //digitalWrite(led2, HIGH);
       if ( mfrc522.PICC_ReadCardSerial())
       {
 
@@ -183,7 +191,7 @@ void loop()
   }
   else
   {
-      digitalWrite(led2, LOW);
+      //digitalWrite(led2, LOW);
       retry--;
       if(retry == 0)
       {
