@@ -5,6 +5,9 @@
 
 
 int led2 = D7;
+volatile int pos = 200;
+volatile int pos2 = 200;
+volatile long timeIRQ = 0;
 
 // RFID pinout
 #define SS_PIN DAC
@@ -18,13 +21,38 @@ int retry = 3;
 MFRC522 mfrc522;  // Create MFRC522 instance.
 
 
-NixiesDriver nixies;
+//NixiesDriver nixies;
 
 bool test = false;
 
+volatile int state = HIGH;
+void button1(void)
+{
+  long t = millis();
+  if(t < timeIRQ + 10)
+  {
+    return;
+  }
+  timeIRQ = t;
+
+  if(digitalRead(A2))
+  {
+    pos++;
+  }
+  else
+  {
+    pos--;
+  }
+}
+
+void button2(void)
+{
+  pos2++;
+}
+
 void setup() {
 
-  nixies.Setup();
+  //nixies.Setup();
 
 
   Particle.variable("get_cur_tag", current_tag_iot);
@@ -33,6 +61,7 @@ void setup() {
 
   // It's important you do this here, inside the setup() function rather than outside it or in the loop function.
 
+  mfrc522.Setup(SS_PIN, RST_PIN);
   SPI.begin();
 	SPI.setClockSpeed(100000);
 
@@ -43,27 +72,27 @@ void setup() {
   Serial.print(v, HEX);
 
 
-  pinMode(led2, OUTPUT);
 
 
 
   //pinMode(D1, OUTPUT);
   //pinMode(D0, OUTPUT);
   //pinMode(D1, OUTPUT);
+  pinMode(led2, OUTPUT);
 
   //SPI.begin();
   //SPI.setClockSpeed(100000);
   //SPI.setDataMode(SPI_MODE0) ;
 
+  //pinMode(led2, OUTPUT);
+  //pinMode(A1, INPUT);
+  //pinMode(A2, INPUT);
+  //attachInterrupt(A1, button1, FALLING);
+
+  //pinMode(A0, INPUT_PULLUP);
+  //attachInterrupt(A0, button2, FALLING);
 
 
-
-
-}
-
-static void endSpiTransfer()
-{
-  digitalWrite(D1, HIGH);
 }
 
 // Next we have the loop function, the other essential part of a microcontroller program.
@@ -77,14 +106,21 @@ static const uint32_t leds[] = {0x00000001, 0x00000001, 0x00000001, 0x00000001, 
 void loop()
 {
 
-  //nixies.LoadShiftRegister(0xAAAAAAAA);
-  nixies.CyclTask();
+  //Serial.print(pos);
+  //Serial.print("/");
+  //Serial.println(pos2);
+  //delay(250);
 
-  counter++;
-  if(counter == 5)
-  {
-      counter = 0;
-  }
+  //return;
+
+  //nixies.LoadShiftRegister(0xAAAAAAAA);
+  //nixies.CyclTask();
+
+  //counter++;
+  //if(counter == 5)
+  //{
+  //    counter = 0;
+  //}
 
 
 
@@ -108,6 +144,7 @@ void loop()
 
   // Nixies management !
 
+/*
  if( inc > 0)
  {
    if(nixies.GetBrightness() + inc > nixies.GetMaxBrightness())
@@ -123,13 +160,14 @@ void loop()
    }
  }
  nixies.SetBrightness(nixies.GetBrightness() + inc);
-
+*/
 
 
   // RFID management !
   delay(10);
   if ( mfrc522.PICC_IsNewCardPresent())
   {
+      digitalWrite(led2, HIGH);
       if ( mfrc522.PICC_ReadCardSerial())
       {
 
@@ -145,6 +183,7 @@ void loop()
   }
   else
   {
+      digitalWrite(led2, LOW);
       retry--;
       if(retry == 0)
       {
@@ -169,4 +208,5 @@ void loop()
   }
   last_tag = current_tag;
   // And repeat!
+
 }
