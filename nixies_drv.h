@@ -60,6 +60,9 @@ class NixiesDriver
       uint32_t      _durationOn;
       uint32_t      _durationTotal;
 
+      uint32_t      _periodeMsprev = 0;
+      uint32_t      _dutyCycleprev = 0;
+
 
       void      LoadShiftRegister(uint32_t value);
 

@@ -1,6 +1,7 @@
 #include "tags.h"
 #include "application.h"
 
+static MFRC522       _mfrc522;             // Tag reader
 
 void tags::Setup(void)
 {
@@ -23,10 +24,10 @@ void tags::CyclTask(void)
 {
 
   unsigned long time = millis();
-  _prevTime = time;
   _currentTime += (time - _prevTime);
+  _prevTime = time;
 
-  if(_currentTime < 30)
+  if(_currentTime < 100)
   {
       return;
   }
@@ -43,9 +44,6 @@ void tags::CyclTask(void)
               _current_tag = *((uint32_t*)_mfrc522.uid.uidByte);
               _retry = TAGS_NUM_OF_RETRY;
           }
-          //Serial.print(counter);
-          //Serial.print("Tag");
-          //Serial.println(current_tag);
       }
   }
   else

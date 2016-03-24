@@ -32,9 +32,6 @@ class tags
 
     private :
 
-
-      MFRC522       _mfrc522;             // Tag reader
-
       bool          _tagIsPresent;        // True if a tag is reading...
       uint32_t      _current_tag;         // Tag id (if tag is not present, send last id)
 

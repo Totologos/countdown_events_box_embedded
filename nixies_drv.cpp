@@ -71,6 +71,12 @@ void NixiesDriver::SetBrightness(const uint16_t value)
 
 void NixiesDriver::SetBlink(const uint32_t periodeMs, const uint32_t dutyCycle)
 {
+    if(_periodeMsprev == periodeMs && _dutyCycleprev == dutyCycle )
+    {
+        return;
+    }
+    _periodeMsprev = periodeMs;
+    _dutyCycleprev = dutyCycle;
 
     if(dutyCycle < 100)
     {
