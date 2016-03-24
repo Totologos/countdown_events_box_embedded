@@ -2,6 +2,7 @@
 #include "MFRC522.h"
 #include "nixies_drv.h"
 #include "pwm.h"
+#include "rotary_coder.h"
 
 
 int led2 = D7;
@@ -27,35 +28,12 @@ MFRC522 mfrc522;  // Create MFRC522 instance.
 
 NixiesDriver nixies;
 
+rotaryCoder Rot1;
+rotaryCoder Rot2;
+
 bool test = false;
 
-volatile int state = HIGH;
-void button1(void)
-{
-  long t = millis();
-  if(t < timeIRQ + 10)
-  {
-    return;
-  }
-  timeIRQ = t;
 
-  //if(digitalRead(A2))
-  if(digitalRead(D1))
-  {
-    pos++;
-    digitalWrite(led2, HIGH);
-  }
-  else
-  {
-    pos--;
-    digitalWrite(led2, LOW);
-  }
-}
-
-void button2(void)
-{
-  pos2++;
-}
 
 void setup() {
 
@@ -81,30 +59,21 @@ void setup() {
 
 
 
+  Rot1.init(A1,A2);
+  Rot1.setMax(10);
+
+  Rot2.init(A0,D1);
+  Rot2.setMax(10);
 
 
-  //pinMode(D1, OUTPUT);
-  //pinMode(D0, OUTPUT);
-  //pinMode(D1, OUTPUT);
   pinMode(led2, OUTPUT);
 
   //SPI.begin();
   //SPI.setClockSpeed(100000);
   //SPI.setDataMode(SPI_MODE0) ;
 
-  //pinMode(led2, OUTPUT);
-  //pinMode(A1, INPUT);
-  //pinMode(A2, INPUT);
-  //attachInterrupt(A1, button1, FALLING);
 
-
-  pinMode(A0, INPUT);
-  pinMode(D1, INPUT);
-  attachInterrupt(A0, button1, FALLING);
-
-  //pinMode(A0, INPUT_PULLUP);
-  //attachInterrupt(A0, button2, FALLING);
-  nixies.SetBlink(100,100);
+  nixies.SetBlink(1000,100);
 
 
 }
@@ -137,10 +106,10 @@ current_pos_iot = pos;
   }
 
   //nixies.LoadShiftRegister((1<<1) + (1<<(0+10)) + (1<<(6+20)));
-  nixies.DispValue(pos);
-  nixies.SetBrightness(nixies.GetMaxBrightness()*pos / 100);
+  nixies.DispValue(333);
+  nixies.SetBrightness(nixies.GetMaxBrightness()/2);
   nixies.CyclTask();
-  delay(300);
+
   //counter++;
   //if(counter == 5)
   //{

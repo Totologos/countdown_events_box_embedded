@@ -45,7 +45,7 @@ class NixiesDriver
       // value must be in between 0 and 999.
       void      DispValue(const uint16_t value);
 
-      void      LoadShiftRegister(uint32_t value);
+
 
     private:
 
@@ -61,7 +61,7 @@ class NixiesDriver
       uint32_t      _durationTotal;
 
 
-
+      void      LoadShiftRegister(uint32_t value);
 
 };
 

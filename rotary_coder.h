@@ -21,7 +21,7 @@ class rotaryCoder {
   private:
      int _min;
      int _max;
-     int _val;
+     volatile int _val;
 
      int _pin_updw;
 

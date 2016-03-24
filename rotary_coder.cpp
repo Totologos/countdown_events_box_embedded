@@ -1,5 +1,6 @@
 #include "rotary_coder.h"
 
+
 void rotaryCoder::init(const int pin_irq, const int pin_updw)
 {
     _pin_updw = pin_updw;
@@ -16,15 +17,14 @@ void rotaryCoder::init(const int pin_irq, const int pin_updw)
 void rotaryCoder::handler()
 {
     long t = millis();
-    if(t < _timeIRQ + 10)
+    if(t < _timeIRQ + 10)  // debounce xx ms
     {
         return;
     }
     _timeIRQ = t;
 
-    if(digitalRead(_pin_updw))
+    if(digitalRead(_pin_updw)) // Test is go up or go down...
     {
-        digitalWrite(D7, HIGH);
         if(_val < _max)
         {
             _val++;
@@ -32,7 +32,6 @@ void rotaryCoder::handler()
     }
     else
     {
-        digitalWrite(D7, LOW);
         if(_val > _min)
         {
             _val--;

@@ -11,6 +11,7 @@ NixiesDriver::NixiesDriver(void)
 
 void NixiesDriver::Setup()
 {
+    // Set all nixies output !
     pinMode( NIXIES_DRV_POL,   OUTPUT);
     pinMode( NIXIES_DRV_BL,    OUTPUT);
     pinMode( NIXIES_DRV_LE,    OUTPUT);
@@ -18,10 +19,8 @@ void NixiesDriver::Setup()
     pinMode( NIXIES_DRV_CLK,   OUTPUT);
 
 
-
-    // Set all nixies output !
     digitalWrite( NIXIES_DRV_POL,   LOW);
-    digitalWrite( NIXIES_DRV_BL,    LOW);
+    digitalWrite( NIXIES_DRV_BL,    HIGH);
     digitalWrite( NIXIES_DRV_LE,    LOW);
     digitalWrite( NIXIES_DRV_DATA,  LOW);
     digitalWrite( NIXIES_DRV_CLK,   LOW);
@@ -34,30 +33,30 @@ void NixiesDriver::Setup()
 void NixiesDriver::CyclTask(void)
 {
     unsigned long time = millis();
-    _prevTime = time;
     _currentTime += (time - _prevTime);
+    _prevTime = time;
 
     if(_durationOn == 0) // Duty cycle is 0%
     {
         // Allways Off;
-        _dimmer.SetDutyCycle(_dimmer.GetPeriod());
+        _dimmer.SetDutyCycle(0);
         _currentTime = 0;
     }
     else if(_durationTotal == _durationOn) // Duty cycle is 100%
     {
         // Allways On !
-        _dimmer.SetDutyCycle(_dimmer.GetPeriod() - _brightness);
+        _dimmer.SetDutyCycle(_brightness);
         _currentTime = 0;
     }
     else if(_currentTime < _durationOn)
     {
         // is On !
-        _dimmer.SetDutyCycle(_dimmer.GetPeriod() - _brightness);
+        _dimmer.SetDutyCycle(_brightness);
     }
     else if(_currentTime <_durationTotal)
     {
         // is Off !
-        _dimmer.SetDutyCycle(_dimmer.GetPeriod());
+        _dimmer.SetDutyCycle(0);
     }
     else
     {
@@ -67,14 +66,7 @@ void NixiesDriver::CyclTask(void)
 
 void NixiesDriver::SetBrightness(const uint16_t value)
 {
-    if(value < GetMaxBrightness())
-    {
-      _brightness = GetMaxBrightness() - value;
-    }
-    else
-    {
-       _brightness = 0;
-    }
+    _brightness = (value < GetMaxBrightness()) ? value :  GetMaxBrightness();
 }
 
 void NixiesDriver::SetBlink(const uint32_t periodeMs, const uint32_t dutyCycle)
@@ -82,7 +74,7 @@ void NixiesDriver::SetBlink(const uint32_t periodeMs, const uint32_t dutyCycle)
 
     if(dutyCycle < 100)
     {
-        _durationOn = periodeMs * ( dutyCycle / 100 );
+        _durationOn = (periodeMs * dutyCycle) / 100 ;
     }
     else
     {
