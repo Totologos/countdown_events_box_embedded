@@ -12,13 +12,17 @@ NixiesDriver::NixiesDriver(void)
 void NixiesDriver::Setup()
 {
     pinMode( NIXIES_DRV_POL,   OUTPUT);
+    pinMode( NIXIES_DRV_BL,    OUTPUT);
     pinMode( NIXIES_DRV_LE,    OUTPUT);
     pinMode( NIXIES_DRV_DATA,  OUTPUT);
     pinMode( NIXIES_DRV_CLK,   OUTPUT);
 
+
+
     // Set all nixies output !
     digitalWrite( NIXIES_DRV_POL,   LOW);
-    digitalWrite( NIXIES_DRV_BL,    HIGH);
+    digitalWrite( NIXIES_DRV_BL,    LOW);
+    digitalWrite( NIXIES_DRV_LE,    LOW);
     digitalWrite( NIXIES_DRV_DATA,  LOW);
     digitalWrite( NIXIES_DRV_CLK,   LOW);
 
@@ -65,11 +69,11 @@ void NixiesDriver::SetBrightness(const uint16_t value)
 {
     if(value < GetMaxBrightness())
     {
-      _brightness = value;
+      _brightness = GetMaxBrightness() - value;
     }
     else
     {
-       _brightness = GetMaxBrightness();
+       _brightness = 0;
     }
 }
 
@@ -98,12 +102,14 @@ void NixiesDriver::DispValue(const uint16_t value)
     const uint16_t v = (value < 1000)  ? value : 999;
     String s = String(v, DEC);
 
-    const uint8_t digit1 = (char)(s[0]) - '0';
-    const uint8_t digit2 = (char)(s[1]) - '0';
-    const uint8_t digit3 = (char)(s[2]) - '0';
+    const uint8_t sl = s.length();
+    const uint8_t digit1 = (sl >= 3) ? (char)(s[sl - 3]) - '0' : 31;
+    const uint8_t digit2 = (sl >= 2) ? (char)(s[sl - 2]) - '0' : 21;
+    const uint8_t digit3 = (sl >= 1) ? (char)(s[sl - 1]) - '0' : 11;
 
-    const uint32_t encode = (1 << (digit1 + 0  ) ) +
-                            (1 << (digit2 + 10 ) ) +
+
+    const uint32_t encode = (1 << (digit1 + 0  ) )  |
+                            (1 << (digit2 + 10 ) )  |
                             (1 << (digit3 + 20 ) );
 
     LoadShiftRegister(encode);
@@ -128,11 +134,13 @@ void NixiesDriver::LoadShiftRegister(const uint32_t value)
         else
             digitalWrite( NIXIES_DRV_DATA,   HIGH);
         val <<= 1;
-        delayMicroseconds(1); // Slowly, ULN2803A switch in 1us !
+        delayMicroseconds(20); // Slowly, ULN2803A switch in 1us !
         digitalWrite( NIXIES_DRV_CLK,   HIGH);
-        delayMicroseconds(2);
+        delayMicroseconds(30);
     }
+    delayMicroseconds(30);
     // Load latches !
     digitalWrite( NIXIES_DRV_LE,   LOW);
+    delayMicroseconds(30);
     digitalWrite( NIXIES_DRV_LE,   HIGH);
 }

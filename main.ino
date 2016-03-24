@@ -25,7 +25,7 @@ int retry = 3;
 MFRC522 mfrc522;  // Create MFRC522 instance.
 
 
-//NixiesDriver nixies;
+NixiesDriver nixies;
 
 bool test = false;
 
@@ -39,7 +39,8 @@ void button1(void)
   }
   timeIRQ = t;
 
-  if(digitalRead(A2))
+  //if(digitalRead(A2))
+  if(digitalRead(D1))
   {
     pos++;
     digitalWrite(led2, HIGH);
@@ -58,7 +59,7 @@ void button2(void)
 
 void setup() {
 
-  //nixies.Setup();
+  nixies.Setup();
 
 
   //Particle.variable("get_cur_tag", current_tag_iot);
@@ -92,12 +93,18 @@ void setup() {
   //SPI.setDataMode(SPI_MODE0) ;
 
   //pinMode(led2, OUTPUT);
-  pinMode(A1, INPUT);
-  pinMode(A2, INPUT);
-  attachInterrupt(A1, button1, FALLING);
+  //pinMode(A1, INPUT);
+  //pinMode(A2, INPUT);
+  //attachInterrupt(A1, button1, FALLING);
+
+
+  pinMode(A0, INPUT);
+  pinMode(D1, INPUT);
+  attachInterrupt(A0, button1, FALLING);
 
   //pinMode(A0, INPUT_PULLUP);
   //attachInterrupt(A0, button2, FALLING);
+  nixies.SetBlink(100,100);
 
 
 }
@@ -110,6 +117,8 @@ static int inc = 50;
 //static const uint32_t leds[] = {0x00000001, 0x00000002, 0x00000004, 0x40000000, 0x80000000 };
 static const uint32_t leds[] = {0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001 };
 
+static int leftregister = 0;
+
 void loop()
 {
 
@@ -121,9 +130,17 @@ current_pos_iot = pos;
 
   //return;
 
-  //nixies.LoadShiftRegister(0xAAAAAAAA);
-  //nixies.CyclTask();
+  leftregister++;
+  if(leftregister == 10)
+  {
+    leftregister = 0;
+  }
 
+  //nixies.LoadShiftRegister((1<<1) + (1<<(0+10)) + (1<<(6+20)));
+  nixies.DispValue(pos);
+  nixies.SetBrightness(nixies.GetMaxBrightness()*pos / 100);
+  nixies.CyclTask();
+  delay(300);
   //counter++;
   //if(counter == 5)
   //{
@@ -152,8 +169,8 @@ current_pos_iot = pos;
 
   // Nixies management !
 
-/*
- if( inc > 0)
+
+ /*if( inc > 0)
  {
    if(nixies.GetBrightness() + inc > nixies.GetMaxBrightness())
    {
@@ -168,7 +185,8 @@ current_pos_iot = pos;
    }
  }
  nixies.SetBrightness(nixies.GetBrightness() + inc);
-*/
+ */
+
 
 
   // RFID management !
