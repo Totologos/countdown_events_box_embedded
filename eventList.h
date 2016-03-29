@@ -13,12 +13,12 @@ class eventsList
         eventsList() {};
 
         String toString(            void                            );
-        bool parseString(           String str                      );
+        bool parseString(           const String str                      );
 
-        bool checkThisOne(          uint16_t id                     );
+        bool checkThisOne(          const uint16_t id                     );
 
-        bool init(	                uint32_t id,
-                                    uint32_t start_date = 0         );
+        bool init(	                const uint32_t id,
+                                    const uint32_t start_date = 0         );
 
         uint16_t getCountDown(      void                            );
 

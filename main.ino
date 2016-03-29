@@ -72,8 +72,17 @@ void loop()
         digitalWrite(D7, HIGH);
 
     }
+    else
+    {
+        //event.init(15,Time.now() - (10 * 24 * 60 * 60));
+    }
 
+    event.parseString("00000011,12345,");
     debug_string = event.toString();
+    current_pos_iot = event.debugInt;
+
+    //debug_string = event.toString();
+    //current_pos_iot = event.getCountDown();
 
     if(tag.GetTagIsPresent())
     {

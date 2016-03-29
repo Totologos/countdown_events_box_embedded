@@ -18,11 +18,18 @@ class Event
 
         uint16_t getCountDown(      void                            );
 
+        String debugStr;
+        uint32_t debugInt;
     private :
 
         uint32_t _id;
         uint32_t _start_date;
         uint16_t _alarm[3];
+        bool    split(              const String    s       ,
+                                    const String    delim   ,
+                                          uint32_t &data    ,
+                                          int      &index   );
+
 
 };
 
