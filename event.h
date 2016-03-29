@@ -3,15 +3,15 @@
 
 #include "application.h"
 
-class Events
+class Event
 {
     public :
-        Events() {};
+        Event() {};
 
         String toString(            void                            );
         bool parseString(           String str                      );
 
-        bool checkThisOne(          uint16_t id                     );
+        bool checkThisOne(          uint32_t id                     );
 
         bool init(	                uint32_t id,
                                     uint32_t start_date = 0         );
@@ -19,7 +19,7 @@ class Events
         uint16_t getCountDown(      void                            );
 
     private :
-    
+
         uint32_t _id;
         uint32_t _start_date;
         uint16_t _alarm[3];
