@@ -74,7 +74,12 @@ class Event
         bool        split           ( const String    s       ,
                                       const String    delim   ,
                                             uint32_t &data    ,
-                                            int      &index                 );
+                                            int      &index   );
+
+        bool        split(          const String    s       ,
+                                    const String    delim   ,
+                                          String   &data    ,
+                                          int      &index   );
 
 
 };

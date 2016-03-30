@@ -96,7 +96,14 @@ void Event::resetAlarm(void)
 
 String Event::toString(void)
 {
-    String t = String::format("%X,%X",_event_desc.id,_event_desc.end_date);
+    String t = String::format("%X\\%X\\",_event_desc.id,_event_desc.end_date);
+    for(int i=0; i < _num_of_alarms; i++)
+    {
+        t += String::format("%X\\", _event_desc.alarms[i].remainingDays);
+    }
+
+    t += String::format("%s&",_event_desc.description);
+
 
 
     uint32_t t2 =  strtol(t, nullptr, 16);
@@ -105,28 +112,75 @@ String Event::toString(void)
 
 bool Event::parseString(const String str)
 {
-    int i = 0;
-    if(split(str, ",", _event_desc.id, i) == false)
+    int index = 0;
+
+    /////////////
+    // Parse Id
+    uint32_t id;
+    if(split(str, "\\", id, index) == false)
     {
         return false;
     }
 
+    // check if input id is not null and
+    // in case of current id is not null then, id must be equal to input id
+    // in case of ccurent id is not, it is a empty event, so attibute input id
+    // to this one.
+    if( (id==0) || ((id != _event_desc.id) && _event_desc.id != 0 ) )
+    {
+        return false;
+    }
+
+
+
+    /////////////
+    // Parse end date
     uint32_t end_date;
-    if( split(str, ",", end_date, i) == false )
+    if( split(str, "\\", end_date, index) == false )
     {
         return false;
     }
 
-    if(end_date != _event_desc.end_date)
+
+
+    /////////////
+    // Parse alarms dates...
+    uint32_t alarms[_num_of_alarms];
+    for(int i=0; i < _num_of_alarms; i++)
     {
-        _event_desc.end_date = end_date;
-        // If end date was been updated, then re-armed alarms.
-        for(int i=0; i < _num_of_alarms; i++)
+        if( split(str, "\\", alarms[i], index) == false )
         {
-            _event_desc.alarms[i].status = ALARM_STATUS_ARMED;
+            return false;
         }
     }
 
+    /////////////
+    // Parse description
+    String description;
+    if( ( split(str, "&", description , index) == false) ||
+        ( description.length() > (_length_of_description - 1) )  )
+    {
+        return false;
+    }
+
+    // For each alarm, check if values must be updated...
+    // If yes, re-armed alarms.
+    for(int i=0; i < _num_of_alarms; i++)
+    {
+        if( (end_date != _event_desc.end_date) ||
+            (_event_desc.alarms[i].remainingDays != (uint16_t)alarms[i]))
+        {
+            _event_desc.alarms[i].status = ALARM_STATUS_ARMED;
+        }
+        _event_desc.alarms[i].remainingDays = (uint16_t)alarms[i];
+    }
+
+    // Update other values
+    _event_desc.end_date = end_date;
+    _event_desc.id = id;
+    description.toCharArray(_event_desc.description, _length_of_description);
+
+    /////////////
     // Update eeprom
     _event_desc.crc = _address;
     _event_desc.crc = crc_run(sizeof(eventDesc_t), &_event_desc);
@@ -137,7 +191,7 @@ bool Event::parseString(const String str)
 
 bool Event::split(          const String    s       ,
                             const String    delim   ,
-                                  uint32_t &data    ,
+                                  String   &data    ,
                                   int      &index   )
 {
     const int       i = s.indexOf(delim,index);
@@ -145,10 +199,24 @@ bool Event::split(          const String    s       ,
     {
         return false;
     }
-    data = (uint32_t)strtol(s.substring(index, i), nullptr,16);
+    data = s.substring(index, i);
 
     index = i + 1;
 
     return true;
 
+}
+
+bool Event::split(          const String    s       ,
+                            const String    delim   ,
+                                  uint32_t &data    ,
+                                  int      &index   )
+{
+    String sdata;
+    if(split(s,delim,sdata,index) == true)
+    {
+        data = (uint32_t)strtol(sdata, nullptr,16);
+        return true;
+    }
+    return false;
 }

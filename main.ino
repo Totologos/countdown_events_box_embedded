@@ -77,7 +77,7 @@ void loop()
         //event.init(15,Time.now() - (10 * 24 * 60 * 60));
     }
 
-    //event.parseString("00000011,12345,");
+    //event.parseString("00000011\\12345\\1\\2\\3\\coucou&");
     debug_string = event.toString();
     current_pos_iot = event.debugInt;
 
