@@ -35,6 +35,20 @@ rotaryCoder Rot2;
 unsigned long lastSync = 0;
 String debug_string;
 
+
+void callback(uint32_t tag_id)
+{
+    current_pos_iot = tag_id;
+    if(tag_id != 0)
+    {
+        digitalWrite(D7, HIGH);
+    }
+    else
+    {
+        digitalWrite(D7, LOW);
+    }
+}
+
 void setup() {
 
   pinMode(led2, OUTPUT);
@@ -45,7 +59,7 @@ void setup() {
   Particle.variable("get_cur_tag", current_pos_iot);
   Particle.variable("debug", debug_string);
 
-  tag.Setup();
+  tag.Setup(&callback);
 
 
   Rot1.init(A1,A2);
@@ -60,7 +74,6 @@ void setup() {
   event.init(0);
 
 }
-
 
 void loop()
 {
@@ -79,20 +92,20 @@ void loop()
 
     //event.parseString("00000011\\12345\\1\\2\\3\\coucou&");
     debug_string = event.toString();
-    current_pos_iot = event.debugInt;
+    //current_pos_iot = event.debugInt;
 
     //debug_string = event.toString();
     //current_pos_iot = event.getCountDown();
 
     if(tag.GetTagIsPresent())
     {
-        digitalWrite(D7, HIGH);
+        //digitalWrite(D7, HIGH);
         nixies.SetBlink(1000,100);
         nixies.DispValue(tag.GetTagId()&0xFF);
     }
     else
     {
-        digitalWrite(D7, LOW);
+        //digitalWrite(D7, LOW);
         nixies.SetBlink(1000,0);
     }
 

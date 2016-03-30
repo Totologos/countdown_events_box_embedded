@@ -10,6 +10,8 @@
 #define SS_PIN DAC
 #define RST_PIN WKP
 
+typedef void (*CallbackType)(uint32_t);
+
 class tags
 {
     public :
@@ -17,7 +19,7 @@ class tags
         tags() { };
 
         // Setup, must be call in setup() function in main file
-        void Setup(void);
+        void Setup(CallbackType callback = nullptr);
 
         // Task cycl, muste be call in loop() function in main file
         // as soon as possible.
@@ -39,6 +41,8 @@ class tags
 
       unsigned long _prevTime = 0;
       uint8_t       _currentTime = 0;
+
+      CallbackType _callback;
 
 };
 

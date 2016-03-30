@@ -3,7 +3,7 @@
 
 static MFRC522       _mfrc522;             // Tag reader
 
-void tags::Setup(void)
+void tags::Setup(CallbackType callback)
 {
     _mfrc522.Setup(SS_PIN, RST_PIN);
     SPI.begin();
@@ -18,41 +18,54 @@ void tags::Setup(void)
 
     _prevTime = 0;
     _currentTime = 0;
+
+    _callback = callback;
 }
 
 void tags::CyclTask(void)
 {
 
-  unsigned long time = millis();
-  _currentTime += (time - _prevTime);
-  _prevTime = time;
+    unsigned long time = millis();
+    _currentTime += (time - _prevTime);
+    _prevTime = time;
 
-  if(_currentTime < 100)
-  {
-      return;
-  }
-  _currentTime = 0;
+    if(_currentTime < 100)
+    {
+        return;
+    }
+    _currentTime = 0;
 
-  if ( _mfrc522.PICC_IsNewCardPresent())
-  {
-      if ( _mfrc522.PICC_ReadCardSerial())
-      {
+    if ( _mfrc522.PICC_IsNewCardPresent())
+    {
+        if ( _mfrc522.PICC_ReadCardSerial())
+        {
 
-          if(_mfrc522.uid.size == sizeof(uint32_t)) // Compatible only
-          {
-              _tagIsPresent = true;
-              _current_tag = *((uint32_t*)_mfrc522.uid.uidByte);
-              _retry = TAGS_NUM_OF_RETRY;
-          }
-      }
-  }
-  else
-  {
-      _retry--;
-      if(_retry == 0)
-      {
-          _tagIsPresent = false;
-          _retry = 1;
-      }
-  }
+            if(_mfrc522.uid.size == sizeof(uint32_t)) // Compatible only
+            {
+                _tagIsPresent = true;
+                _current_tag = *((uint32_t*)_mfrc522.uid.uidByte);
+                _retry = TAGS_NUM_OF_RETRY;
+                if(_callback != nullptr)
+                {
+                    _callback(_current_tag);
+                }
+            }
+        }
+    }
+    else
+    {
+        if(_retry > 0)
+        {
+            _retry--;
+        }
+        else if(_retry == 0)
+        {
+            _retry--;
+            _tagIsPresent = false;
+            if(_callback != nullptr)
+            {
+                _callback(0);
+            }
+        }
+    }
 }

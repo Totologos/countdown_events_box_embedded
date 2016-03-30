@@ -28,6 +28,9 @@ class Event
 
         bool        parseString     ( const String str                      );
 
+        void        erase           ( const uint32_t new_id = 0             );
+        
+
         bool        isEqual         ( const uint32_t id                     );
 
         uint16_t    getRemainingDays( void                                  );

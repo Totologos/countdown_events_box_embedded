@@ -25,6 +25,19 @@ bool Event::init(const uint16_t address)
 
 }
 
+void Event::erase ( const uint32_t new_id             )
+{
+    memset(&_event_desc, 0, sizeof(eventDesc_t) );
+    _event_desc.id = new_id;
+
+    /////////////
+    // Update eeprom
+    _event_desc.crc = _address;
+    _event_desc.crc = crc_run(sizeof(eventDesc_t), &_event_desc);
+    EEPROM.put(_address, _event_desc);
+}
+
+
 bool Event::isEqual( const uint32_t id)
 {
     return (_event_desc.id == id);
@@ -97,6 +110,7 @@ void Event::resetAlarm(void)
 String Event::toString(void)
 {
     String t = String::format("%X\\%X\\",_event_desc.id,_event_desc.end_date);
+
     for(int i=0; i < _num_of_alarms; i++)
     {
         t += String::format("%X\\", _event_desc.alarms[i].remainingDays);
@@ -104,9 +118,6 @@ String Event::toString(void)
 
     t += String::format("%s&",_event_desc.description);
 
-
-
-    uint32_t t2 =  strtol(t, nullptr, 16);
     return t;
 }
 
@@ -130,9 +141,6 @@ bool Event::parseString(const String str)
     {
         return false;
     }
-
-
-
     /////////////
     // Parse end date
     uint32_t end_date;
@@ -140,8 +148,6 @@ bool Event::parseString(const String str)
     {
         return false;
     }
-
-
 
     /////////////
     // Parse alarms dates...
@@ -189,32 +195,35 @@ bool Event::parseString(const String str)
     return true;
 }
 
-bool Event::split(          const String    s       ,
-                            const String    delim   ,
-                                  String   &data    ,
-                                  int      &index   )
+bool Event::split(          const String     s       ,
+                            const String     delim   ,
+                                  String   & data    ,
+                                  int      & index   )
 {
-    const int       i = s.indexOf(delim,index);
+    const int i = s.indexOf(delim,index); // try to find delimiter
+
     if(i == -1)
     {
         return false;
     }
-    data = s.substring(index, i);
 
-    index = i + 1;
+    data = s.substring(index, i); // Extract data
+
+    index = i + 1; // Update index
 
     return true;
 
 }
 
-bool Event::split(          const String    s       ,
-                            const String    delim   ,
-                                  uint32_t &data    ,
-                                  int      &index   )
+bool Event::split(          const String     s       ,
+                            const String     delim   ,
+                                  uint32_t & data    ,
+                                  int      & index   )
 {
     String sdata;
     if(split(s,delim,sdata,index) == true)
     {
+        // Convert hexadecimal string to uint32_t
         data = (uint32_t)strtol(sdata, nullptr,16);
         return true;
     }
