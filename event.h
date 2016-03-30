@@ -22,7 +22,7 @@ class Event
 
                     Event           () {};
 
-        bool        init            ( const uint32_t adress                 );
+        bool        init            ( const uint16_t adress                 );
 
         String      toString        ( void                                  );
 
@@ -42,22 +42,22 @@ class Event
 
     private :
 
-        typedef enum
+        enum alarmStatus_t
         {
             ALARM_STATUS_RESETED = 0,       // Alarm is off
             ALARM_STATUS_ARMED,             // Alarm is ready to ring
             ALARM_STATUS_RING               // Alarm is ringing
 
-        }alarmStatus_t;
+        };
 
-        typedef struct
+        struct alarmDesc_t
         {
             alarmStatus_t   status;
             uint16_t        remainingDays;
 
-        }alarmDesc_t;
+        };
 
-        struct eventDesc
+        struct eventDesc_t
         {
             uint32_t      id;
             uint32_t      end_date;
@@ -65,9 +65,9 @@ class Event
             alarmDesc_t   alarms[_num_of_alarms];
             uint16_t      crc;
         };
-        eventDesc _event_desc;
-        
-        int             _adress;
+        eventDesc_t _event_desc;
+
+        uint16_t             _address;
 
         eventStatus_t   _status = EVENT_STATUS_NO_CONFIGURED;
 

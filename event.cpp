@@ -4,10 +4,25 @@
 #include <stdio.h>
 
 
-bool Event::init(const uint32_t id, const uint32_t end_date)
+bool Event::init(const uint16_t address)
 {
-    _event_desc.id = id;
-    _event_desc.end_date = end_date;
+    _address = address;
+    eventDesc_t tEvent;
+    EEPROM.get(_address, tEvent);
+
+    const uint16_t crc = tEvent.crc;
+    tEvent.crc = _address;
+
+    //debugInt = crc_run(sizeof(eventDesc_t), &tEvent);
+    if( crc_run(sizeof(eventDesc_t), &tEvent) == crc)
+    {
+        _event_desc = tEvent;
+    }
+    else
+    {
+        memset(&_event_desc, 0, sizeof(eventDesc_t) );
+    }
+
 }
 
 bool Event::isEqual( const uint32_t id)
@@ -111,6 +126,11 @@ bool Event::parseString(const String str)
             _event_desc.alarms[i].status = ALARM_STATUS_ARMED;
         }
     }
+
+    // Update eeprom
+    _event_desc.crc = _address;
+    _event_desc.crc = crc_run(sizeof(eventDesc_t), &_event_desc);
+    EEPROM.put(_address, _event_desc);
 
     return true;
 }

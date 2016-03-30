@@ -5,34 +5,10 @@
  */
 #define P_CCITT    ( 0x1021 )
 
-uint16_t Crc::run (  const uint32_t       buffer_size,
-                     const void *         buffer)
-{
+static bool         _tabccitt_init;
+static uint16_t     _tabccitt [256];
 
-
-    if (( buffer == NULL ) || ( buffer_size == 0 ))
-    {
-        return ( 0 );
-    }
-    
-    if(_tabccitt_init == false)
-    {
-        Crc::init();
-    }
-
-    uint16_t t_crc = 0x0000;
-    uint32_t i;
-    for ( i = 0; i < buffer_size; i++ )
-    {
-        t_crc = Crc::updateCrc ( t_crc, ((uint8_t*)buffer ) [i] );
-    }
-
-    return ( t_crc );
-
-
-}
-
-void Crc::init( void )
+static void init( void )
 {
     uint32_t i, j;
     uint16_t crc, c;
@@ -72,7 +48,7 @@ void Crc::init( void )
  *
  * \return new crc
  */
-uint16_t Crc::updateCrc      ( uint16_t crc,
+static uint16_t updateCrc      ( uint16_t crc,
                                uint8_t  c )
 {
     uint16_t tmp, short_c;
@@ -83,4 +59,31 @@ uint16_t Crc::updateCrc      ( uint16_t crc,
     crc = ( crc << 8 ) ^ _tabccitt [tmp];
 
     return ( crc );
+}
+
+uint16_t crc_run (  const uint32_t       buffer_size,
+                     const void *         buffer)
+{
+
+
+    if (( buffer == NULL ) || ( buffer_size == 0 ))
+    {
+        return ( 0 );
+    }
+
+    if(_tabccitt_init == false)
+    {
+        init();
+    }
+
+    uint16_t t_crc = 0x0000;
+    uint32_t i;
+    for ( i = 0; i < buffer_size; i++ )
+    {
+        t_crc = updateCrc ( t_crc, ((uint8_t*)buffer ) [i] );
+    }
+
+    return ( t_crc );
+
+
 }

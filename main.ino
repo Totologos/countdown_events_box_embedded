@@ -57,7 +57,7 @@ void setup() {
 
   nixies.SetBlink(1000,0);
 
-  event.init(13, 234);
+  event.init(0);
 
 }
 
@@ -77,7 +77,7 @@ void loop()
         //event.init(15,Time.now() - (10 * 24 * 60 * 60));
     }
 
-    event.parseString("00000011,12345,");
+    //event.parseString("00000011,12345,");
     debug_string = event.toString();
     current_pos_iot = event.debugInt;
 
