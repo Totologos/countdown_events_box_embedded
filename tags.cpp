@@ -42,13 +42,17 @@ void tags::CyclTask(void)
 
             if(_mfrc522.uid.size == sizeof(uint32_t)) // Compatible only
             {
-                _tagIsPresent = true;
-                _current_tag = *((uint32_t*)_mfrc522.uid.uidByte);
-                _retry = TAGS_NUM_OF_RETRY;
-                if(_callback != nullptr)
+                const uint32_t tag_id = *((uint32_t*)_mfrc522.uid.uidByte);
+                if(tag_id != _current_tag)
                 {
-                    _callback(_current_tag);
+                        _current_tag = tag_id;
+                        _tagIsPresent = true;
+                       if(_callback != nullptr)
+                       {
+                           _callback(_current_tag);
+                       }
                 }
+                _retry = TAGS_NUM_OF_RETRY;
             }
         }
     }
@@ -62,6 +66,7 @@ void tags::CyclTask(void)
         {
             _retry--;
             _tagIsPresent = false;
+            _current_tag = 0;
             if(_callback != nullptr)
             {
                 _callback(0);

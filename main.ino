@@ -5,6 +5,7 @@
 #include "rotary_coder.h"
 #include "tags.h"
 #include "eventList.h"
+#include "led.h"
 
 
 
@@ -26,6 +27,8 @@ EventsList event_list;
 
 tags tag;
 
+Led wink_led;
+
 
 NixiesDriver nixies;
 
@@ -44,13 +47,16 @@ void callback(uint32_t tag_id)
     if(event_list.getCurrentEvent() != nullptr)
     {
 
+
         switch(event_list.getCurrentEvent()->getStatus())
         {
             case Event::EVENT_STATUS_NO_CONFIGURED :
+                wink_led.setWinks( 0 );
                 nixies.DispValue(999);
                 nixies.SetBlink(1000,50);
             break;
             case Event::EVENT_STATUS_IN_PROGRESS:
+                wink_led.setWinks( wink_led.getWinks() + 1 );
                 nixies.DispValue(event_list.getCurrentEvent()->getRemainingDays());
                 nixies.SetBlink(1000,100);
             break;
@@ -63,16 +69,12 @@ void callback(uint32_t tag_id)
                 nixies.SetBlink(1000,0);
 
         }
-        digitalWrite(D7, HIGH);
-        //try to find id in list event
-        // if found, update display...
-
-        // if not found, create a new event
+        //digitalWrite(D7, HIGH);
     }
     else
     {
         nixies.SetBlink(1000,0);
-        digitalWrite(D7, LOW);
+        //digitalWrite(D7, LOW);
     }
 }
 
@@ -81,6 +83,8 @@ void setup() {
   pinMode(led2, OUTPUT);
 
   nixies.Setup();
+
+  wink_led.Setup(D7);
 
   //Particle.variable("get_cur_tag", current_tag_iot);
   Particle.variable("get_cur_tag", current_pos_iot);
@@ -100,7 +104,7 @@ void setup() {
 
   event_list.init();
 
-
+  wink_led.setWinks( 2 );
 
 }
 
@@ -111,7 +115,7 @@ void loop()
         // Request time synchronization from the Particle Cloud
         Particle.syncTime();
         lastSync = millis();
-        digitalWrite(D7, HIGH);
+        //digitalWrite(D7, HIGH);
 
     }
     else
@@ -134,4 +138,5 @@ void loop()
     nixies.CyclTask();
 
     tag.CyclTask();
+    wink_led.CyclTask();
 }
