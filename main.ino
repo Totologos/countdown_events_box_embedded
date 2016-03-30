@@ -43,7 +43,26 @@ void callback(uint32_t tag_id)
     event_list.newIdEvent(tag_id);
     if(event_list.getCurrentEvent() != nullptr)
     {
-        nixies.DispValue(event_list.getCurrentEvent()->getRemainingDays());
+
+        switch(event_list.getCurrentEvent()->getStatus())
+        {
+            case Event::EVENT_STATUS_NO_CONFIGURED :
+                nixies.DispValue(999);
+                nixies.SetBlink(1000,50);
+            break;
+            case Event::EVENT_STATUS_IN_PROGRESS:
+                nixies.DispValue(event_list.getCurrentEvent()->getRemainingDays());
+                nixies.SetBlink(1000,100);
+            break;
+            case Event::EVENT_STATUS_END:
+                nixies.DispValue(0);
+                nixies.SetBlink(1000,50);
+            break;
+
+            default:
+                nixies.SetBlink(1000,0);
+
+        }
         digitalWrite(D7, HIGH);
         //try to find id in list event
         // if found, update display...
@@ -52,6 +71,7 @@ void callback(uint32_t tag_id)
     }
     else
     {
+        nixies.SetBlink(1000,0);
         digitalWrite(D7, LOW);
     }
 }
@@ -109,18 +129,6 @@ void loop()
     //debug_string = event.toString();
     //current_pos_iot = event.getCountDown();
 
-    if(tag.GetTagIsPresent())
-    {
-        //digitalWrite(D7, HIGH);
-        nixies.SetBlink(1000,100);
-
-        //nixies.DispValue(tag.GetTagId()&0xFF);
-    }
-    else
-    {
-        //digitalWrite(D7, LOW);
-        nixies.SetBlink(1000,0);
-    }
 
     nixies.SetBrightness(Rot1.getVal()*10);
     nixies.CyclTask();
