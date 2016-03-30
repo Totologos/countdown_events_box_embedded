@@ -51,17 +51,16 @@ void callback(uint32_t tag_id)
         switch(event_list.getCurrentEvent()->getStatus())
         {
             case Event::EVENT_STATUS_NO_CONFIGURED :
-                wink_led.setWinks( 0 );
                 nixies.DispValue(999);
                 nixies.SetBlink(1000,50);
             break;
             case Event::EVENT_STATUS_IN_PROGRESS:
-                wink_led.setWinks( wink_led.getWinks() + 1 );
+                event_list.getCurrentEvent()->resetAlarm();
                 nixies.DispValue(event_list.getCurrentEvent()->getRemainingDays());
                 nixies.SetBlink(1000,100);
             break;
             case Event::EVENT_STATUS_END:
-                nixies.DispValue(0);
+
                 nixies.SetBlink(1000,50);
             break;
 
@@ -103,8 +102,7 @@ void setup() {
   nixies.SetBlink(1000,0);
 
   event_list.init();
-
-  wink_led.setWinks( 2 );
+  wink_led.setWinks( 0 );
 
 }
 
@@ -139,4 +137,6 @@ void loop()
 
     tag.CyclTask();
     wink_led.CyclTask();
+
+    wink_led.setWinks(event_list.getAlarmCounter());
 }

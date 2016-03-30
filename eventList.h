@@ -25,6 +25,8 @@ class EventsList
 
         void        updateEvent     (String str);
 
+        int         getAlarmCounter (void);
+
         Event *     getCurrentEvent ( void ) { return _current_event; }
 
     private :
