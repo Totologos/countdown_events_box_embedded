@@ -22,14 +22,14 @@ class Event
 
                     Event           () {};
 
-        bool        init            ( const uint16_t adress                 );
+        bool        init            ( const int instance                    );
 
         String      toString        ( void                                  );
 
         bool        parseString     ( const String str                      );
 
         void        erase           ( const uint32_t new_id = 0             );
-        
+
 
         bool        isEqual         ( const uint32_t id                     );
 
@@ -39,6 +39,8 @@ class Event
 
         bool        checkAlarm(void);
         void        resetAlarm(void);
+
+        uint32_t    getId ( void ) { return _event_desc.id; }
 
         String debugStr;
         uint32_t debugInt;

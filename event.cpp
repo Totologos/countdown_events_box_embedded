@@ -4,9 +4,9 @@
 #include <stdio.h>
 
 
-bool Event::init(const uint16_t address)
+bool Event::init(const int instance)
 {
-    _address = address;
+    _address = instance * sizeof(eventDesc_t);
     eventDesc_t tEvent;
     EEPROM.get(_address, tEvent);
 
@@ -60,7 +60,7 @@ uint16_t Event::getRemainingDays( void )
     }
 
     _status = EVENT_STATUS_IN_PROGRESS;
-    return (uint16_t)( (ct - _event_desc.end_date) / 60 / 60 / 24 );
+    return (uint16_t)( (_event_desc.end_date - ct ) / 60 / 60 / 24 );
 
 }
 

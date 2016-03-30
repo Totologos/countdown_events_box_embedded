@@ -7,25 +7,31 @@
 
 #define EVENTS_LIST_SIZE     (20)
 
-class eventsList
+class EventsList
 {
+    private :
+        //setup
+        static const int number_of_events = 20;
     public :
-        eventsList() {};
+        EventsList() {};
+
+        void        init            (void  );
 
         String      toString        ( void                           );
-        bool        parseString     ( const String str               );
 
-        bool        checkThisOne    ( const uint16_t id              );
+        void        newIdEvent    ( const uint32_t id  ) ;
 
-        bool        init            ( const uint32_t id,
-                                      const uint32_t start_date = 0  );
+        void        eraseEvent      (const uint32_t id ) ;
 
-        uint16_t    getCountDown    ( void                           );
+        void        updateEvent     (String str);
+
+        Event *     getCurrentEvent ( void ) { return _current_event; }
 
     private :
 
-        std::vector<event> _event_list(EVENTS_LIST_SIZE);
+        Event _events_list[number_of_events];
 
+        Event * _current_event;
 
         uint32_t _id;
         uint32_t _start_date;

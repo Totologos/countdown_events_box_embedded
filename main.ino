@@ -4,7 +4,8 @@
 #include "pwm.h"
 #include "rotary_coder.h"
 #include "tags.h"
-#include "event.h"
+#include "eventList.h"
+
 
 
 int led2 = D7;
@@ -21,7 +22,7 @@ uint32_t current_tag_iot = 0;
 uint32_t current_pos_iot = 100;
 
 
-Event event;
+EventsList event_list;
 
 tags tag;
 
@@ -39,9 +40,15 @@ String debug_string;
 void callback(uint32_t tag_id)
 {
     current_pos_iot = tag_id;
-    if(tag_id != 0)
+    event_list.newIdEvent(tag_id);
+    if(event_list.getCurrentEvent() != nullptr)
     {
+        nixies.DispValue(event_list.getCurrentEvent()->getRemainingDays());
         digitalWrite(D7, HIGH);
+        //try to find id in list event
+        // if found, update display...
+
+        // if not found, create a new event
     }
     else
     {
@@ -71,7 +78,9 @@ void setup() {
 
   nixies.SetBlink(1000,0);
 
-  event.init(0);
+  event_list.init();
+
+
 
 }
 
@@ -88,10 +97,13 @@ void loop()
     else
     {
         //event.init(15,Time.now() - (10 * 24 * 60 * 60));
+        String updateStr = String::format("F641850\\%X\\0\\0\\0\\Happy bithday&",
+            Time.now() + (10 * 24 * 60 * 60) );
+        //event_list.updateEvent(updateStr);
     }
 
     //event.parseString("00000011\\12345\\1\\2\\3\\coucou&");
-    debug_string = event.toString();
+    debug_string = event_list.toString();
     //current_pos_iot = event.debugInt;
 
     //debug_string = event.toString();
@@ -101,7 +113,8 @@ void loop()
     {
         //digitalWrite(D7, HIGH);
         nixies.SetBlink(1000,100);
-        nixies.DispValue(tag.GetTagId()&0xFF);
+
+        //nixies.DispValue(tag.GetTagId()&0xFF);
     }
     else
     {
