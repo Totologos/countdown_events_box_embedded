@@ -81,15 +81,17 @@ void   EventsList::eraseEvent    ( const uint32_t id  )
 
 }
 
-void    EventsList::updateEvent     (String str)
+bool    EventsList::updateEvent     (String str)
 {
     for(int i=0; i< number_of_events; i++)
     {
         if(_events_list[i].parseString(str) == true)
         {
-            return;
+            return true;
         }
     }
+    
+    return false;
 }
 
 int     EventsList::getAlarmCounter ( void )

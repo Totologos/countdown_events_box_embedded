@@ -7,7 +7,7 @@ class rotaryCoder {
   public :
     rotaryCoder() { }
 
-    void init(const int pin_irq, const int pin_updw);
+    void init(const int pin_irq, const int pin_updw, const bool invert = false);
 
     void setMin(int min) { _min = min; }
     void setMax(int max) { _max = max; }
@@ -24,6 +24,7 @@ class rotaryCoder {
      volatile int _val;
 
      int _pin_updw;
+     int _invert;
 
      volatile long  _timeIRQ;
 

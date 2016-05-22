@@ -23,7 +23,7 @@ class EventsList
 
         void        eraseEvent      (const uint32_t id ) ;
 
-        void        updateEvent     (String str);
+        bool        updateEvent     (String str);
 
         int         getAlarmCounter (void);
 

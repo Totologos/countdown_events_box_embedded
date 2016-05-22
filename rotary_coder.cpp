@@ -1,9 +1,10 @@
 #include "rotary_coder.h"
 
 
-void rotaryCoder::init(const int pin_irq, const int pin_updw)
+void rotaryCoder::init(const int pin_irq, const int pin_updw, const bool invert)
 {
     _pin_updw = pin_updw;
+    _invert = invert;
     _max = 100;
     _min = 0;
     _val = 0;
@@ -23,7 +24,9 @@ void rotaryCoder::handler()
     }
     _timeIRQ = t;
 
-    if(digitalRead(_pin_updw)) // Test is go up or go down...
+    bool in = digitalRead(_pin_updw);
+    in = _invert ? !in : in;
+    if(in) // Test is go up or go down...
     {
         if(_val < _max)
         {

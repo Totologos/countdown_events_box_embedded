@@ -74,3 +74,8 @@ void tags::CyclTask(void)
         }
     }
 }
+
+void tags::Refresh(void)
+{
+  _current_tag = 0;
+}

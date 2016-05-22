@@ -26,6 +26,8 @@ class tags
         // The reading tag operation is performed every 30ms!
         void CyclTask(void);
 
+        void Refresh(void);
+
         // Return true if a tag is present
         bool     GetTagIsPresent(void ) { return _tagIsPresent; }
 
