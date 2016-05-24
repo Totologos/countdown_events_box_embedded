@@ -82,7 +82,7 @@ bool Event::checkAlarm(void)
     bool ret = false;
     for(int i=0; i < _num_of_alarms; i++)
     {
-        if( ( _event_desc.alarms[i].remainingDays <= rd          ) &&
+        if( ( _event_desc.alarms[i].remainingDays == rd          ) &&
             ( _event_desc.alarms[i].status == ALARM_STATUS_ARMED ) )
         {
             _event_desc.alarms[i].status = ALARM_STATUS_RING;
@@ -224,7 +224,7 @@ bool Event::split(          const String     s       ,
     if(split(s,delim,sdata,index) == true)
     {
         // Convert hexadecimal string to uint32_t
-        data = (uint32_t)strtol(sdata, nullptr,16);
+        data = (uint32_t)strtoul(sdata, nullptr,16);
         return true;
     }
     return false;

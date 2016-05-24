@@ -111,7 +111,7 @@ int setUpdateCdeCallback(String json)
 
 int setDeleteCdeCallback(String json)
 {
-  event_list.eraseEvent((uint32_t)strtol(json, nullptr,16));
+  event_list.eraseEvent((uint32_t)strtoul(json, nullptr,16));
   //debug_string = json + "&";
 }
 
