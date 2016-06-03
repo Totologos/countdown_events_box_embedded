@@ -11,14 +11,17 @@ NixiesDriver::NixiesDriver(void)
 
 void NixiesDriver::Setup()
 {
+    // Set all nixies output !
     pinMode( NIXIES_DRV_POL,   OUTPUT);
+    pinMode( NIXIES_DRV_BL,    OUTPUT);
     pinMode( NIXIES_DRV_LE,    OUTPUT);
     pinMode( NIXIES_DRV_DATA,  OUTPUT);
     pinMode( NIXIES_DRV_CLK,   OUTPUT);
 
-    // Set all nixies output !
+
     digitalWrite( NIXIES_DRV_POL,   LOW);
     digitalWrite( NIXIES_DRV_BL,    HIGH);
+    digitalWrite( NIXIES_DRV_LE,    LOW);
     digitalWrite( NIXIES_DRV_DATA,  LOW);
     digitalWrite( NIXIES_DRV_CLK,   LOW);
 
@@ -30,30 +33,30 @@ void NixiesDriver::Setup()
 void NixiesDriver::CyclTask(void)
 {
     unsigned long time = millis();
-    _prevTime = time;
     _currentTime += (time - _prevTime);
+    _prevTime = time;
 
     if(_durationOn == 0) // Duty cycle is 0%
     {
         // Allways Off;
-        _dimmer.SetDutyCycle(_dimmer.GetPeriod());
+        _dimmer.SetDutyCycle(0);
         _currentTime = 0;
     }
     else if(_durationTotal == _durationOn) // Duty cycle is 100%
     {
         // Allways On !
-        _dimmer.SetDutyCycle(_dimmer.GetPeriod() - _brightness);
+        _dimmer.SetDutyCycle(_brightness);
         _currentTime = 0;
     }
     else if(_currentTime < _durationOn)
     {
         // is On !
-        _dimmer.SetDutyCycle(_dimmer.GetPeriod() - _brightness);
+        _dimmer.SetDutyCycle(_brightness);
     }
     else if(_currentTime <_durationTotal)
     {
         // is Off !
-        _dimmer.SetDutyCycle(_dimmer.GetPeriod());
+        _dimmer.SetDutyCycle(0);
     }
     else
     {
@@ -63,22 +66,21 @@ void NixiesDriver::CyclTask(void)
 
 void NixiesDriver::SetBrightness(const uint16_t value)
 {
-    if(value < GetMaxBrightness())
-    {
-      _brightness = value;
-    }
-    else
-    {
-       _brightness = GetMaxBrightness();
-    }
+    _brightness = (value < GetMaxBrightness()) ? value :  GetMaxBrightness();
 }
 
 void NixiesDriver::SetBlink(const uint32_t periodeMs, const uint32_t dutyCycle)
 {
+    if(_periodeMsprev == periodeMs && _dutyCycleprev == dutyCycle )
+    {
+        return;
+    }
+    _periodeMsprev = periodeMs;
+    _dutyCycleprev = dutyCycle;
 
     if(dutyCycle < 100)
     {
-        _durationOn = periodeMs * ( dutyCycle / 100 );
+        _durationOn = (periodeMs * dutyCycle) / 100 ;
     }
     else
     {
@@ -98,12 +100,14 @@ void NixiesDriver::DispValue(const uint16_t value)
     const uint16_t v = (value < 1000)  ? value : 999;
     String s = String(v, DEC);
 
-    const uint8_t digit1 = (char)(s[0]) - '0';
-    const uint8_t digit2 = (char)(s[1]) - '0';
-    const uint8_t digit3 = (char)(s[2]) - '0';
+    const uint8_t sl = s.length();
+    const uint8_t digit1 = (sl >= 3) ? (char)(s[sl - 3]) - '0' : 31;
+    const uint8_t digit2 = (sl >= 2) ? (char)(s[sl - 2]) - '0' : 21;
+    const uint8_t digit3 = (sl >= 1) ? (char)(s[sl - 1]) - '0' : 11;
 
-    const uint32_t encode = (1 << (digit1 + 0  ) ) +
-                            (1 << (digit2 + 10 ) ) +
+
+    const uint32_t encode = (1 << (digit1 + 0  ) )  |
+                            (1 << (digit2 + 10 ) )  |
                             (1 << (digit3 + 20 ) );
 
     LoadShiftRegister(encode);
@@ -128,11 +132,13 @@ void NixiesDriver::LoadShiftRegister(const uint32_t value)
         else
             digitalWrite( NIXIES_DRV_DATA,   HIGH);
         val <<= 1;
-        delayMicroseconds(1); // Slowly, ULN2803A switch in 1us !
+        delayMicroseconds(20); // Slowly, ULN2803A switch in 1us !
         digitalWrite( NIXIES_DRV_CLK,   HIGH);
-        delayMicroseconds(2);
+        delayMicroseconds(30);
     }
+    delayMicroseconds(30);
     // Load latches !
     digitalWrite( NIXIES_DRV_LE,   LOW);
+    delayMicroseconds(30);
     digitalWrite( NIXIES_DRV_LE,   HIGH);
 }

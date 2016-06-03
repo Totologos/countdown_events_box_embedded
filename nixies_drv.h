@@ -11,7 +11,7 @@
 #define NIXIES_DRV_DATA     D2
 #define NIXIES_DRV_CLK      D4
 
-#define NIXIES_MAX_BRIGHTNESS (5000)
+#define NIXIES_MAX_BRIGHTNESS (2500)
 
 class NixiesDriver
 {
@@ -45,9 +45,11 @@ class NixiesDriver
       // value must be in between 0 and 999.
       void      DispValue(const uint16_t value);
 
+
+
     private:
 
-      void      LoadShiftRegister(uint32_t value);
+
 
       uint16_t  _currentValueDisp;
       pwm       _dimmer;
@@ -58,8 +60,11 @@ class NixiesDriver
       uint32_t      _durationOn;
       uint32_t      _durationTotal;
 
+      uint32_t      _periodeMsprev = 0;
+      uint32_t      _dutyCycleprev = 0;
 
 
+      void      LoadShiftRegister(uint32_t value);
 
 };
 

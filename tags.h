@@ -10,6 +10,8 @@
 #define SS_PIN DAC
 #define RST_PIN WKP
 
+typedef void (*CallbackType)(uint32_t);
+
 class tags
 {
     public :
@@ -17,12 +19,14 @@ class tags
         tags() { };
 
         // Setup, must be call in setup() function in main file
-        void Setup(void);
+        void Setup(CallbackType callback = nullptr);
 
         // Task cycl, muste be call in loop() function in main file
         // as soon as possible.
         // The reading tag operation is performed every 30ms!
         void CyclTask(void);
+
+        void Refresh(void);
 
         // Return true if a tag is present
         bool     GetTagIsPresent(void ) { return _tagIsPresent; }
@@ -32,9 +36,6 @@ class tags
 
     private :
 
-
-      MFRC522       _mfrc522;             // Tag reader
-
       bool          _tagIsPresent;        // True if a tag is reading...
       uint32_t      _current_tag;         // Tag id (if tag is not present, send last id)
 
@@ -42,6 +43,8 @@ class tags
 
       unsigned long _prevTime = 0;
       uint8_t       _currentTime = 0;
+
+      CallbackType _callback;
 
 };
 

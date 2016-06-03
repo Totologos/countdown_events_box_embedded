@@ -2,9 +2,16 @@
 #include "MFRC522.h"
 #include "nixies_drv.h"
 #include "pwm.h"
+#include "rotary_coder.h"
+#include "tags.h"
+#include "eventList.h"
+#include "led.h"
+#include "timeout.h"
+
 
 
 int led2 = D7;
+
 
 // RFID pinout
 #define SS_PIN DAC
@@ -13,160 +20,175 @@ int led2 = D7;
 uint32_t last_tag = 0 ;
 uint32_t current_tag = 0 ;
 uint32_t current_tag_iot = 0;
-int retry = 3;
 
-MFRC522 mfrc522;  // Create MFRC522 instance.
+uint32_t current_pos_iot = 100;
 
+
+EventsList event_list;
+
+tags tag;
+
+Led wink_led;
 
 NixiesDriver nixies;
 
-bool test = false;
+TimeOut timeOut;
+
+rotaryCoder Rot1;
+int rot1Prev;
+rotaryCoder Rot2;
+
+#define SYNC_TIME (10 * 60 * 1000) // synchronize time every 10min.
+unsigned long lastSync = 0;
+String debug_string;
+String getCdeString;
+
+void timeOutCallback(uint32_t dispValue)
+{
+    if(dispValue == 0)
+    {
+        nixies.SetBlink(1000,0); // off !
+    }
+    else if(dispValue == timeOut.Infinity())
+    {
+        nixies.SetBlink(250,0); // blink fast !
+        nixies.DispValue(999);
+    }
+    else
+    {
+        nixies.SetBlink(500,50); // blink low !
+        nixies.DispValue(dispValue);
+    }
+
+
+}
+
+void tagCallback(uint32_t tag_id)
+{
+    current_pos_iot = tag_id;
+    event_list.newIdEvent(tag_id);
+    if(event_list.getCurrentEvent() != nullptr)
+    {
+        timeOut.newEvent(); // Reset timeout !
+
+        switch(event_list.getCurrentEvent()->getStatus())
+        {
+            case Event::EVENT_STATUS_NO_CONFIGURED :
+                nixies.DispValue(999);
+                nixies.SetBlink(1000,50);
+            break;
+            case Event::EVENT_STATUS_IN_PROGRESS:
+                event_list.getCurrentEvent()->resetAlarm();
+                nixies.DispValue(event_list.getCurrentEvent()->getRemainingDays());
+                nixies.SetBlink(1000,100);
+            break;
+            case Event::EVENT_STATUS_END:
+
+                nixies.SetBlink(1000,50);
+            break;
+
+            default:
+                nixies.SetBlink(1000,0);
+
+        }
+        //digitalWrite(D7, HIGH);
+    }
+    else
+    {
+        nixies.SetBlink(1000,0);
+        //digitalWrite(D7, LOW);
+    }
+}
+
+int setUpdateCdeCallback(String json)
+{
+    if(event_list.updateEvent(json + "&"))
+    {
+        tag.Refresh();
+    }
+    //debug_string = json + "&";
+}
+
+int setDeleteCdeCallback(String json)
+{
+  event_list.eraseEvent((uint32_t)strtoul(json, nullptr,16));
+  //debug_string = json + "&";
+}
 
 void setup() {
 
-  nixies.Setup();
-
-
-  Particle.variable("get_cur_tag", current_tag_iot);
-  // We are going to tell our device that D0 and D7 (which we named led1 and led2 respectively) are going to be output
-  // (That means that we will be sending voltage to them, rather than monitoring voltage that comes from them)
-
-  // It's important you do this here, inside the setup() function rather than outside it or in the loop function.
-
-  SPI.begin();
-	SPI.setClockSpeed(100000);
-
-  mfrc522.PCD_Init();   // Init MFRC522 module
-  //mfrc522.PCD_SetAntennaGain(mfrc522.RxGain_max);
-  byte v = mfrc522.PCD_ReadRegister(mfrc522.VersionReg);
-  Serial.print(F("Firmware Version: 0x"));
-  Serial.print(v, HEX);
-
-
   pinMode(led2, OUTPUT);
 
+  nixies.Setup();
+
+  wink_led.Setup(D7);
 
 
-  //pinMode(D1, OUTPUT);
-  //pinMode(D0, OUTPUT);
-  //pinMode(D1, OUTPUT);
-
-  //SPI.begin();
-  //SPI.setClockSpeed(100000);
-  //SPI.setDataMode(SPI_MODE0) ;
+  tag.Setup(&tagCallback);
 
 
+  Rot1.init(A1,A2);
+  Rot1.setMax(nixies.GetMaxBrightness()/50);
+  Rot1.setVal(Rot1.getMax());
+  Rot1.setMin(10);
 
+  Rot2.init(A0,D1,true);
+  timeOut.Setup(10000, 600000, &timeOutCallback);
+  Rot2.setMin(timeOut.getPosMin());
+  Rot2.setMax(timeOut.getPosMax());
+  Rot2.setVal(timeOut.getPosDef());
 
+  nixies.SetBlink(1000,0);
+
+  event_list.init();
+  wink_led.setWinks( 0 );
+
+  Particle.variable("get_cur_tag", current_pos_iot);
+  Particle.variable("debug", debug_string);
+  Particle.variable("get_cde", getCdeString);
+  Particle.function("update_cde", setUpdateCdeCallback);
+  Particle.function("delete_cde", setDeleteCdeCallback);
 
 }
-
-static void endSpiTransfer()
-{
-  digitalWrite(D1, HIGH);
-}
-
-// Next we have the loop function, the other essential part of a microcontroller program.
-// This routine gets repeated over and over, as quickly as possible and as many times as possible, after the setup function is called.
-// Note: Code that blocks for too long (like more than 5 seconds), can make weird things happen (like dropping the network connection).  The built-in delay function shown below safely interleaves required background activity, so arbitrarily long delays can safely be done if you need them.
-static uint8_t counter = 0 ;
-static int inc = 50;
-//static const uint32_t leds[] = {0x00000001, 0x00000002, 0x00000004, 0x40000000, 0x80000000 };
-static const uint32_t leds[] = {0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001 };
 
 void loop()
 {
 
-  //nixies.LoadShiftRegister(0xAAAAAAAA);
-  nixies.CyclTask();
+    if (millis() - lastSync > SYNC_TIME) {
+        // Request time synchronization from the Particle Cloud
+        Particle.syncTime();
+        lastSync = millis();
+    }
 
-  counter++;
-  if(counter == 5)
-  {
-      counter = 0;
-  }
+    //event.parseString("00000011\\12345\\1\\2\\3\\coucou&");
+    //debug_string = event_list.toString();
+    getCdeString = event_list.toString();
+    //current_pos_iot = event.debugInt;
 
+    //debug_string = event.toString();
+    //current_pos_iot = event.getCountDown();
 
+    if(Rot1.getVal() != rot1Prev)
+    {
+        timeOut.newEvent();
+        rot1Prev = Rot1.getVal();
+    }
 
-  // To blink the LED, first we'll turn it on...
-  //delay(50);
-  //digitalWrite(led2, HIGH);
+    if(timeOut.getDispStatus())
+    {
+        nixies.SetBrightness(Rot1.getVal()*50);
+    }
+    else
+    {
+        nixies.SetBrightness(0); // off !
+    }
 
-  //SPI.transfer(13);
-  //digitalWrite(D1, LOW);
-  //SPI.transfer(buffer_tx, buffer_rx, 5, endSpiTransfer);
-  //tone(D0,20000);
-  // We'll leave it on for 1 second...
-  //delay(50);
-  //noTone(A0);
-  //Serial.println("hello world!");
-  //Serial.println(mfrc522.PCD_GetAntennaGain());
+    nixies.CyclTask();
 
-  //byte v = mfrc522.PCD_ReadRegister(mfrc522.VersionReg);
-  //Serial.print(F("Firmware Version: 0x"));
-  //Serial.print(v, HEX);
+    tag.CyclTask();
+    wink_led.CyclTask();
+    timeOut.CyclTask(Rot2.getVal());
+    //debug_string = "pos=" + timeOut.getPos();
 
-  // Nixies management !
-
- if( inc > 0)
- {
-   if(nixies.GetBrightness() + inc > nixies.GetMaxBrightness())
-   {
-       inc = -50;
-   }
- }
- else
- {
-   if(nixies.GetBrightness() + inc <= 50)
-   {
-      inc = 50;
-   }
- }
- nixies.SetBrightness(nixies.GetBrightness() + inc);
-
-
-
-  // RFID management !
-  delay(10);
-  if ( mfrc522.PICC_IsNewCardPresent())
-  {
-      if ( mfrc522.PICC_ReadCardSerial())
-      {
-
-          if(mfrc522.uid.size == sizeof(uint32_t)) // Compatible only
-          {
-              current_tag = *((uint32_t*)mfrc522.uid.uidByte);
-              retry = 3;
-          }
-          //Serial.print(counter);
-          //Serial.print("Tag");
-          //Serial.println(current_tag);
-      }
-  }
-  else
-  {
-      retry--;
-      if(retry == 0)
-      {
-          current_tag = 0 ;
-          retry = 1;
-      }
-  }
-
-  if(current_tag != last_tag)
-  {
-      if(current_tag == 0)
-      {
-          //Serial.println("Tag Lost!");
-          current_tag_iot = 0 ;
-      }
-      else
-      {
-          //Serial.print("New Tag: ");
-          //Serial.println(current_tag);
-          current_tag_iot = current_tag;
-      }
-  }
-  last_tag = current_tag;
-  // And repeat!
+    wink_led.setWinks(event_list.getAlarmCounter());
 }
